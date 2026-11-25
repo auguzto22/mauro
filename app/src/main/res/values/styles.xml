@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Quantum Learn</string>
+    <style name="Theme.QuantumLearn" parent="android:style/Theme.Material.NoActionBar">
+        <item name="android:windowBackground">#09090B</item>
+        <item name="android:windowActionModeOverlay">true</item>
+    </style>
+</resources>
