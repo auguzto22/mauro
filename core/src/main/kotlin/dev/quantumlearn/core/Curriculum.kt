@@ -48,13 +48,29 @@ object Curriculum {
             StudyModule("Física quântica avançada", listOf(
                 StudyUnit("Barreiras, spin e sistemas compostos", listOf(tunneling(), spin(), entanglement(), decoherence())),
                 StudyUnit("Modelos e aplicações", listOf(oscillator(), hydrogen(), perturbation(), quantumFields(), qubit()))
-            ))
+            )),
+            StudyModule("Inglês 1 · A base da frase", listOf(
+                StudyUnit("Quem é e o que é", listOf(englishPronouns(), englishToBe(), englishToBeQuestions())),
+                StudyUnit("De quem é e onde está", listOf(englishPossessives(), englishArticles(), englishThereIs()))
+            ), Track.English),
+            StudyModule("Inglês 2 · Ações no presente", listOf(
+                StudyUnit("O que você faz", listOf(englishPresent(), englishDoDoes(), englishContinuous())),
+                StudyUnit("Pessoas e capacidades", listOf(englishObjectPronouns(), englishCan()))
+            ), Track.English),
+            StudyModule("Inglês 3 · Perguntas, passado e futuro", listOf(
+                StudyUnit("Fazer perguntas", listOf(englishWh(), englishTime())),
+                StudyUnit("Ontem e amanhã", listOf(englishWasWere(), englishPast(), englishFuture()))
+            ), Track.English)
         ).also(QuestionBank::validate)
     }
 
     val lessons by lazy { modules.flatMap { it.lessons } }
     val questions by lazy { lessons.flatMap { it.questions } }
     val byId by lazy { lessons.associateBy(Lesson::id) }
+    private val tracks by lazy { modules.flatMap { module -> module.lessons.map { it.id to module.track } }.toMap() }
+    fun track(lessonId: String) = tracks[lessonId] ?: Track.Science
+    val english = Reference("British Council · LearnEnglish Grammar", "https://learnenglish.britishcouncil.org/grammar")
+    val cambridge = Reference("Cambridge Dictionary · English Grammar Today", "https://dictionary.cambridge.org/grammar/british-grammar/")
 
     internal data class Draft(
         val prompt: String,

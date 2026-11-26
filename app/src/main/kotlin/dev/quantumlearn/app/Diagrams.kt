@@ -237,6 +237,22 @@ internal fun LessonDiagram(lesson: Lesson) {
                     drawRoundRect((if (emphasized) ink else faint).copy(alpha = pulse), point, Size(square, square), CornerRadius(4.dp.toPx()))
                 }
             }
+            Diagram.Sentence -> {
+                // Blocos da frase: sujeito, verbo e complemento. Em lições de pergunta, o verbo troca de lugar com o sujeito.
+                val question = lesson.id in setOf("en-to-be-questions", "en-do-does", "en-wh", "en-can")
+                val shift = if (question) swing else 0f
+                val subjectX = .08f + .26f * shift
+                val verbX = .34f - .26f * shift
+                val blocks = listOf(Triple(subjectX, .22f, ink), Triple(verbX, .20f, palette.tertiary), Triple(.60f, .32f, faint))
+                blocks.forEachIndexed { index, (x, width, tint) ->
+                    val scale = pop(index, 3)
+                    val height = .38f * scale
+                    drawRoundRect(tint.copy(alpha = if (index == 1) .75f + .25f * swing else .85f), at(x, .50f - height / 2),
+                        Size(size.width * width * scale, size.height * height), CornerRadius(10.dp.toPx()))
+                }
+                straight(at(.08f, .82f), at(.92f, .82f), faint, 1f)
+                if (question) circle(.95f, .50f, 3f + 1.5f * swing, palette.tertiary)
+            }
             Diagram.Energy, Diagram.Interference -> {
                 for (i in 0..30) {
                     val brightness = cos(i * .47).let { it * it }

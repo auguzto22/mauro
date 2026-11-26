@@ -96,8 +96,8 @@ internal fun FormulaAnatomy(guide: FormulaGuide) {
     val shimmer by glow.animateFloat(0f, 1f, infiniteRepeatable(tween(3200, easing = LinearEasing), RepeatMode.Reverse),
         label = "Brilho")
     Panel {
-        SectionTitle("Anatomia da fórmula")
-        Body("Toque em cada símbolo para descobrir o que ele significa.")
+        SectionTitle(if (guide.language) "Anatomia da frase" else "Anatomia da fórmula")
+        Body(if (guide.language) "Toque em cada peça para ver o que ela faz na frase." else "Toque em cada símbolo para descobrir o que ele significa.")
         Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Brush.linearGradient(
             listOf(colors.primaryContainer, colors.primaryContainer.copy(alpha = .55f + .25f * shimmer), colors.tertiaryContainer.copy(alpha = .5f))
         )).padding(vertical = 18.dp, horizontal = 14.dp), contentAlignment = Alignment.Center) {
@@ -156,7 +156,7 @@ internal fun FormulaWalkthrough(guide: FormulaGuide) {
     var showAll by rememberSaveable(guide.lessonId) { mutableStateOf(false) }
     val steps = guide.build
     Panel(Modifier.animateContentSize(spring(stiffness = Spring.StiffnessMediumLow))) {
-        SectionTitle("Como a fórmula funciona")
+        SectionTitle(if (guide.language) "Como montar a frase" else "Como a fórmula funciona")
         Body("Siga cada etapa no seu ritmo, como se estivesse no quadro.")
         StepDots(steps.size, current, showAll) { current = it; showAll = false }
         if (showAll) {
@@ -226,11 +226,11 @@ internal fun RealWorld(guide: FormulaGuide, practice: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Column(Modifier.semantics { heading() }, verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Eyebrow("NO MUNDO REAL")
-            SectionTitle("Onde isso acontece de verdade")
+            SectionTitle(if (guide.language) "Onde você vai usar isso" else "Onde isso acontece de verdade")
         }
         guide.cases.forEachIndexed { index, case -> Reveal(index) { CaseCard(case) } }
         OutlinedButton(onClick = practice, modifier = Modifier.fillMaxWidth()) {
-            Text("Resolver os casos reais no treino")
+            Text(if (guide.language) "Praticar essas situações no treino" else "Resolver os casos reais no treino")
         }
     }
 }
@@ -243,7 +243,7 @@ private fun CaseCard(case: RealCase) {
     val turn by animateFloatAsState(if (open) 90f else 0f, tween(260), label = "Seta")
     Surface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp), color = colors.surface,
         border = BorderStroke(1.dp, if (open) tint.copy(alpha = .6f) else colors.outlineVariant)) {
-        Column(Modifier.clickable(onClickLabel = if (open) "Esconder a conta" else "Ver a conta") { open = !open }
+        Column(Modifier.clickable(onClickLabel = if (open) "Esconder o exemplo" else "Ver o exemplo") { open = !open }
             .padding(16.dp).animateContentSize(), verticalArrangement = Arrangement.spacedBy(9.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 IconTile(glyph, tint, tint.copy(alpha = .16f))
@@ -258,14 +258,14 @@ private fun CaseCard(case: RealCase) {
                 exit = shrinkVertically(tween(220)) + fadeOut(tween(160))) {
                 Surface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp), color = tint.copy(alpha = .12f)) {
                     Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Eyebrow("A CONTA", tint)
+                        Eyebrow("EXEMPLO", tint)
                         Text(case.math, style = MaterialTheme.typography.titleMedium)
-                        if (case.ask != null) Text("Há uma questão sobre este caso no treino da fórmula.",
+                        if (case.ask != null || case.pick != null) Text("Há uma questão sobre este caso no treino.",
                             style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
                     }
                 }
             }
-            if (!open) Text("Toque para ver a conta", style = MaterialTheme.typography.labelSmall, color = tint)
+            if (!open) Text("Toque para ver o exemplo", style = MaterialTheme.typography.labelSmall, color = tint)
         }
     }
 }
@@ -286,19 +286,23 @@ private fun sceneStyle(scene: Scene): Pair<Glyph, Color> {
         Scene.Lab -> Glyph.Flask to colors.primary
         Scene.Computer -> Glyph.Atom to Color(0xFFA78BFA)
         Scene.Music -> Glyph.Wave to Color(0xFFEC4899)
+        Scene.Talk -> Glyph.Speech to Color(0xFF8B5CF6)
+        Scene.Travel -> Glyph.Orbit to Color(0xFF06B6D4)
+        Scene.Work -> Glyph.Target to Color(0xFF64748B)
+        Scene.Games -> Glyph.Spark to Color(0xFFD946EF)
     }
 }
 
 /** Selo animado que aparece em cima das questões de treino da fórmula. */
 @Composable
-internal fun FormulaBadge(latex: String) {
+internal fun FormulaBadge(latex: String, language: Boolean = false) {
     val colors = MaterialTheme.colorScheme
     val state = remember(latex) { MutableTransitionState(false).apply { targetState = true } }
     AnimatedVisibility(state, enter = scaleIn(spring(Spring.DampingRatioMediumBouncy), initialScale = .85f) + fadeIn()) {
         Surface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), color = colors.primaryContainer,
             contentColor = colors.onPrimaryContainer) {
             Column(Modifier.padding(horizontal = 14.dp, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Eyebrow("TREINO DA FÓRMULA", colors.onPrimaryContainer.copy(alpha = .75f))
+                Eyebrow(if (language) "TREINO DA ESTRUTURA" else "TREINO DA FÓRMULA", colors.onPrimaryContainer.copy(alpha = .75f))
                 MathLine(latex, font = 20, color = colors.onPrimaryContainer)
             }
         }

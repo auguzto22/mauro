@@ -45,12 +45,16 @@ import dev.quantumlearn.core.Diagram
 import dev.quantumlearn.core.Lesson
 import dev.quantumlearn.core.Mastery
 import dev.quantumlearn.core.Progress
+import dev.quantumlearn.core.Track
 
 @Composable
 internal fun LearnScreen(progress: Progress, dailyGoal: Int, moduleIndex: Int, setModule: (Int) -> Unit, open: (Lesson) -> Unit) {
     val modules = Curriculum.modules
-    val module = modules[moduleIndex]
-    val next = Curriculum.lessons.firstOrNull { it.id !in progress.completions } ?: Curriculum.lessons.first()
+    val module = modules[moduleIndex.coerceIn(modules.indices)]
+    val track = module.track
+    val trackModules = modules.withIndex().filter { it.value.track == track }
+    val trackLessons = trackModules.flatMap { it.value.lessons }
+    val next = trackLessons.firstOrNull { it.id !in progress.completions } ?: trackLessons.first()
     LazyColumn(contentPadding = PaddingValues(start = 18.dp, end = 18.dp, top = 5.dp, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)) {
         item("stats") {
@@ -61,9 +65,23 @@ internal fun LearnScreen(progress: Progress, dailyGoal: Int, moduleIndex: Int, s
                     "${progress.xpToday} de $dailyGoal XP na meta diária")
             }
         }
+        item("tracks") {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Track.entries.forEach { option ->
+                    FilterChip(selected = option == track,
+                        onClick = { modules.indexOfFirst { it.track == option }.takeIf { it >= 0 }?.let(setModule) },
+                        label = { Text(option.label) },
+                        leadingIcon = {
+                            Mark(if (option == Track.English) Glyph.Speech else Glyph.Atom,
+                                if (option == track) MaterialTheme.colorScheme.onSecondaryContainer
+                                else MaterialTheme.colorScheme.onSurfaceVariant, Modifier.size(18.dp))
+                        })
+                }
+            }
+        }
         item("hero") {
-            val heroModule = modules.indexOfFirst { next in it.lessons } + 1
-            Hero(next, heroModule, progress.completions.isNotEmpty()) { open(next) }
+            val heroModule = trackModules.indexOfFirst { next in it.value.lessons } + 1
+            Hero(next, heroModule, trackLessons.any { it.id in progress.completions }) { open(next) }
         }
         item("title") {
             Column(Modifier.padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -79,9 +97,9 @@ internal fun LearnScreen(progress: Progress, dailyGoal: Int, moduleIndex: Int, s
         }
         item("modules") {
             Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-                modules.forEachIndexed { index, item ->
+                trackModules.forEachIndexed { position, (index, item) ->
                     FilterChip(selected = index == moduleIndex, onClick = { setModule(index) },
-                        label = { Text("Módulo ${index + 1}") },
+                        label = { Text("Módulo ${position + 1}") },
                         modifier = Modifier.padding(vertical = 1.dp).moduleDescription(item.title))
                 }
             }
@@ -158,6 +176,7 @@ private fun LessonRow(lesson: Lesson, mastery: Mastery?, completed: Boolean, nex
         Diagram.Parabola, Diagram.Area, Diagram.Decay, Diagram.Modes, Diagram.Levels,
         Diagram.Threshold, Diagram.Bell, Diagram.Barrier, Diagram.Matrix -> Glyph.Chart
         Diagram.Circuit -> Glyph.Bolt
+        Diagram.Sentence -> Glyph.Speech
     }
     val tint = when {
         completed -> colors.tertiary

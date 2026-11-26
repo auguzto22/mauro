@@ -12,7 +12,27 @@ data class FormulaStep(val latex: String, val text: String)
 enum class Scene(val label: String) {
     Home("Em casa"), Phone("No celular"), Health("Saúde"), Space("Espaço"), Transport("Transporte"),
     Money("Dinheiro"), Sport("Esporte"), Light("Luz e cor"), Nature("Natureza"), Lab("Laboratório"),
-    Computer("Tecnologia"), Music("Som e música")
+    Computer("Tecnologia"), Music("Som e música"), Talk("Conversa"), Travel("Viagem"), Work("Trabalho"),
+    Games("Jogos e séries")
+}
+
+/** Uma frase em inglês para ouvir e repetir, com tradução e pronúncia aproximada em português. */
+data class Phrase(val english: String, val portuguese: String, val sounds: String)
+
+/**
+ * Uma questão de escolha gerada: a frase tem uma lacuna "___" que a resposta completa.
+ * Os passos explicam o raciocínio. As armadilhas trazem o erro típico e a explicação.
+ */
+data class Pick(
+    val instruction: String,
+    val sentence: String,
+    val answer: String,
+    val why: String,
+    val traps: List<Pair<String, String>>,
+    val steps: List<String>
+) {
+    val prompt get() = "$instruction\n$sentence"
+    val solved get() = sentence.replace("___", answer)
 }
 
 /** Uma conta de aplicação direta: substituir valores na fórmula e calcular. */
@@ -29,7 +49,10 @@ data class Plug(
 )
 
 /** Onde a fórmula aparece de verdade, com a conta e, se houver, uma pergunta para resolver. */
-data class RealCase(val scene: Scene, val place: String, val story: String, val math: String, val ask: Plug? = null)
+data class RealCase(
+    val scene: Scene, val place: String, val story: String, val math: String,
+    val ask: Plug? = null, val pick: Pick? = null
+)
 
 /** Pergunta de estrutura da fórmula: isolar uma grandeza, prever um efeito ou ordenar operações. */
 data class Isolation(val prompt: String, val answer: String, val why: String, val traps: List<Pair<String, String>>)
@@ -43,8 +66,13 @@ data class FormulaGuide(
     val build: List<FormulaStep>,
     val cases: List<RealCase>,
     val isolation: Isolation?,
-    val plug: (Int, Int) -> Plug
+    val plug: ((Int, Int) -> Plug)?,
+    val pick: ((Int, Int) -> Pick)? = null,
+    val phrases: List<Phrase> = emptyList()
 ) {
+    /** Guias de inglês falam de estrutura de frase, não de fórmula numérica. */
+    val language get() = phrases.isNotEmpty()
+
     val formula get() = Formula(latex, symbols.joinToString(" · ") { symbol ->
         symbol.symbol + ": " + symbol.meaning + if (symbol.unit.isBlank()) "" else " (${symbol.unit})"
     })
@@ -143,13 +171,21 @@ object FormulaDrills {
                     guide.build.last().text, Difficulty.Intermediate)
             }
             "conta" -> {
-                val plug = seeded(guide, n % SEEDS)
-                val other = seeded(guide, (n + 9) % SEEDS)
+                guide.pick?.let { make ->
+                    val pick = make(2 + n % SEEDS % 8, 2 + n % SEEDS / 8 % 8)
+                    val other = make(2 + (n + 9) % SEEDS % 8, 2 + (n + 9) % SEEDS / 8 % 8)
+                    return question(pick.prompt, choice(pick, n), pick.steps, "Outro exemplo: ${other.solved}", Difficulty.Intermediate)
+                }
+                val plug = seeded(guide, n % SEEDS) ?: return null
+                val other = seeded(guide, (n + 9) % SEEDS) ?: return null
                 question(plug.prompt, numeric(plug), listOf(plug.substitute, plug.compute),
                     "Com outros valores: ${other.substitute} ${other.compute}", Difficulty.Intermediate)
             }
             "real" -> {
                 val case = guide.cases.getOrNull(n) ?: return null
+                case.pick?.let { pick ->
+                    return question("${case.place} · ${pick.prompt}", choice(pick, n), pick.steps, case.math, Difficulty.Advanced)
+                }
                 val plug = case.ask ?: return null
                 question("${case.place} · ${plug.prompt}", numeric(plug), listOf(plug.substitute, plug.compute),
                     case.math, Difficulty.Advanced)
@@ -158,7 +194,14 @@ object FormulaDrills {
         }
     }
 
-    internal fun seeded(guide: FormulaGuide, n: Int): Plug = guide.plug(2 + n % 8, 2 + n / 8 % 8)
+    internal fun seeded(guide: FormulaGuide, n: Int): Plug? = guide.plug?.invoke(2 + n % 8, 2 + n / 8 % 8)
+
+    private fun choice(pick: Pick, n: Int): AnswerSpec.Choice {
+        val options = rotate(listOf(Option(pick.answer, pick.why)) + pick.traps.map { (label, why) ->
+            Option(label, why, ErrorKind.Formula, "Estrutura da frase")
+        }, n)
+        return AnswerSpec.Choice(options.first, options.second)
+    }
 
     private fun numeric(plug: Plug): AnswerSpec.Numeric {
         val unit = plug.unit?.takeIf(MathValidation::supportsUnit)

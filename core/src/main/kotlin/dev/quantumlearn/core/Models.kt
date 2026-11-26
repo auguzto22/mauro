@@ -73,7 +73,7 @@ data class Question(
 
 enum class Diagram {
     Groups, Parts, Growth, Square, Balance, Scale, Line, Wave, Vector, Probability, Energy,
-    Photon, Interference, Parabola, Area, Decay, Modes, Circuit, Levels, Threshold, Bell, Barrier, Matrix
+    Photon, Interference, Parabola, Area, Decay, Modes, Circuit, Levels, Threshold, Bell, Barrier, Matrix, Sentence
 }
 
 data class Lesson(
@@ -94,7 +94,10 @@ data class Lesson(
 )
 
 data class StudyUnit(val title: String, val lessons: List<Lesson>)
-data class StudyModule(val title: String, val units: List<StudyUnit>) {
+/** Trilha de estudo: ciências exatas ou inglês. */
+enum class Track(val label: String) { Science("Física quântica"), English("Inglês") }
+
+data class StudyModule(val title: String, val units: List<StudyUnit>, val track: Track = Track.Science) {
     val lessons get() = units.flatMap { it.lessons }
 }
 

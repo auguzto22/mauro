@@ -1,7 +1,7 @@
 package dev.quantumlearn.core
 
 object FormulaGuides {
-    val all: List<FormulaGuide> by lazy { mathGuides() + physicsGuides() + quantumGuides() }
+    val all: List<FormulaGuide> by lazy { mathGuides() + physicsGuides() + quantumGuides() + englishGuides() }
     val byId: Map<String, FormulaGuide> by lazy { all.associateBy(FormulaGuide::lessonId) }
 }
 

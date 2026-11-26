@@ -33,6 +33,18 @@ No Android Studio, abra a pasta do projeto, escolha um emulador ou dispositivo e
 - `:data` usa Room com KSP para registrar respostas, conclusões e preferências. O esquema é versionado em `data/schemas`. UUIDs e transações tornam reenvios idempotentes e mantêm recompensas por pergunta consistentes no aparelho.
 - `:app` usa Compose, Material 3, `ViewModel`, corrotinas e `Flow`. Desenhos nativos em Canvas e um renderizador do subconjunto de LaTeX usado pelo currículo mantêm as telas offline sem WebView. O tema pode ser claro, escuro ou seguir o aparelho.
 
+## Trilha de inglês
+
+Na tela Aprender, o seletor no topo troca entre **Física quântica** e **Inglês**. A trilha de inglês ensina só a gramática que trava a fala de quem já conhece as palavras:
+
+| Módulo | Lições |
+| --- | --- |
+| Inglês 1 · A base da frase | Pronomes pessoais, verbo to be (am, is, are), to be na negativa e na pergunta, possessivos, artigos a/an/the, there is/there are |
+| Inglês 2 · Ações no presente | Presente simples (I work, she works), do/does, presente contínuo, pronomes objeto, can/can't |
+| Inglês 3 · Perguntas, passado e futuro | What, where, when, who, why, how; in/on/at; was/were; passado simples e did; will e going to |
+
+Cada lição mostra a estrutura da frase como uma "fórmula" (por exemplo, Sujeito + am/is/are + complemento), monta a frase etapa por etapa e traz situações reais: entrevista de emprego, hotel, restaurante, mensagens e reuniões. A seção **Ouça e repita** lê frases em inglês com o motor de voz do Android, em velocidade normal ou devagar, e mostra a pronúncia aproximada escrita em português. **Treinar estrutura** gera questões de lacuna com sujeitos e verbos variados. Cada alternativa errada explica o engano, como "depois de does o verbo fica sem -s". Depois de responder, dá para ouvir a frase certa.
+
 ## Fórmulas explicadas
 
 Cada uma das 52 lições tem um guia da fórmula em `core/.../FormulaGuides*.kt`:

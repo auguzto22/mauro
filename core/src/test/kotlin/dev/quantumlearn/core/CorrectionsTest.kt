@@ -10,7 +10,7 @@ import org.junit.Test
 class CorrectionsTest {
     @Test fun everyAuthoredQuestionHasAnAcceptedAnswerAndEachDistractorHasSpecificFeedback() {
         QuestionBank.validate(Curriculum.modules)
-        assertEquals(listOf(6, 6, 8, 8, 6, 9, 9), Curriculum.modules.map { it.lessons.size })
+        assertEquals(listOf(6, 6, 8, 8, 6, 9, 9, 6, 5, 5), Curriculum.modules.map { it.lessons.size })
         for (question in Curriculum.questions) {
             when (val expected = question.expected) {
                 is AnswerSpec.Choice -> {
@@ -93,7 +93,7 @@ class CorrectionsTest {
     }
 
     @Test fun generatedExercisesAreReproducibleAndGradeTheirSolutions() {
-        val topics = Curriculum.lessons.map(Lesson::id)
+        val topics = Curriculum.lessons.map(Lesson::id).filter { Curriculum.track(it) == Track.Science }
         for (topic in topics) for (seed in 0..99) {
             val question = requireNotNull(Practice.generate(topic, seed))
             assertEquals(question, Practice.restore(question.id))

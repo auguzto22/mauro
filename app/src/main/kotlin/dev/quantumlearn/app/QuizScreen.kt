@@ -59,10 +59,12 @@ import androidx.compose.ui.unit.dp
 import dev.quantumlearn.core.Answer
 import dev.quantumlearn.core.AnswerSpec
 import dev.quantumlearn.core.ChoiceType
+import dev.quantumlearn.core.Curriculum
 import dev.quantumlearn.core.Feedback
 import dev.quantumlearn.core.FormulaDrills
 import dev.quantumlearn.core.Outcome
 import dev.quantumlearn.core.Question
+import dev.quantumlearn.core.Track
 import dev.quantumlearn.core.TutorAction
 import kotlin.math.PI
 import kotlin.math.cos
@@ -105,6 +107,13 @@ private fun QuestionScreen(
         if (showFeedback) list.animateScrollToItem(2)
     }
     val drill = FormulaDrills.isDrill(question)
+    val language = Curriculum.track(question.lessonId) == Track.English
+    val speaker = if (language) rememberSpeaker() else null
+    val listen = feedback?.takeIf { graded && language }?.let { result ->
+        spokenAnswer(question.prompt, result.correctAnswer) ?: result.correctAnswer.takeIf {
+            "-formula-simbolo-" !in question.id && "-formula-letra-" !in question.id
+        }
+    }
     val promptShown = remember { MutableTransitionState(false).apply { targetState = true } }
     val answersShown = remember { MutableTransitionState(false).apply { targetState = true } }
     val feedbackShown = remember(feedback) { MutableTransitionState(false).apply { targetState = true } }
@@ -122,7 +131,7 @@ private fun QuestionScreen(
             item("prompt") {
                 Reveal(0, promptShown) {
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        if (drill) FormulaBadge(question.formula.latex)
+                        if (drill) FormulaBadge(question.formula.latex, language)
                         Eyebrow(if (wasFollowUp) "VERIFICAÇÃO · ${question.concept.uppercase()}" else question.concept.uppercase())
                         Text(question.prompt, style = if (drill) MaterialTheme.typography.headlineSmall
                             else MaterialTheme.typography.headlineMedium)
@@ -188,6 +197,7 @@ private fun QuestionScreen(
             }
             if (feedback != null) {
                 item("feedback") { Reveal(0, feedbackShown) { FeedbackCard(question, feedback, wasFollowUp) } }
+                if (listen != null && speaker != null) item("listen") { Reveal(2) { ListenRow(listen, speaker) } }
             }
         }
         Surface(color = colors.background) {

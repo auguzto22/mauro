@@ -22,7 +22,8 @@ class FormulaDrillsTest {
             assertTrue(guide.lessonId, guide.symbols.map { it.meaning }.distinct().size == guide.symbols.size)
             assertTrue(guide.lessonId, guide.build.size >= 3 && guide.build.none { it.text.isBlank() || it.latex.isBlank() })
             assertTrue(guide.lessonId, guide.cases.size >= 2)
-            assertTrue(guide.lessonId, guide.cases.any { it.ask != null })
+            assertTrue(guide.lessonId, guide.cases.any { it.ask != null || it.pick != null })
+            assertTrue(guide.lessonId, (guide.plug == null) != (guide.pick == null))
             assertNotNull(guide.lessonId, guide.isolation)
             assertTrue(guide.lessonId, guide.reading.isNotBlank() && guide.text.isNotBlank())
         }

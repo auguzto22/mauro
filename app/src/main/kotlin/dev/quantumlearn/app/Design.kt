@@ -154,7 +154,7 @@ internal fun ProgressLine(
 
 internal enum class Glyph {
     Atom, Book, Target, Flask, Spark, Person, Bolt, Flame, Arrow, Back, Check, Plus,
-    Fraction, Power, Root, Balance, Scale, Wave, Orbit, Chart, Moon, Clock, Medal
+    Fraction, Power, Root, Balance, Scale, Wave, Orbit, Chart, Moon, Clock, Medal, Speech
 }
 
 @Composable
@@ -238,6 +238,11 @@ internal fun Mark(glyph: Glyph, color: Color, modifier: Modifier = Modifier.size
             }
             Glyph.Clock -> { ring(9f); line(12 to 6, 12 to 12, 16 to 14) }
             Glyph.Medal -> { ring(5f, 12f, 15f); line(5 to 3, 10 to 11); line(19 to 3, 14 to 11); dot(1.5f, 12f, 15f) }
+            Glyph.Speech -> {
+                box(3f, 4f, 18f, 12f, 4f)
+                line(8 to 16, 7 to 21, 13 to 16)
+                dot(1.2f, 8f, 10f); dot(1.2f, 12f, 10f); dot(1.2f, 16f, 10f)
+            }
         }
     }
 }

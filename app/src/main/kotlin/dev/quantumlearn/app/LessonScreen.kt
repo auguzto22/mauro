@@ -103,6 +103,7 @@ internal fun LessonScreen(
             if (guide != null) {
                 Reveal(3) { FormulaAnatomy(guide) }
                 Reveal(4) { FormulaWalkthrough(guide) }
+                if (guide.language) SpeakPractice(guide.phrases)
             }
             Reveal(5) {
                 Panel(Modifier.animateContentSize()) {
@@ -128,7 +129,9 @@ internal fun LessonScreen(
                 horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                 if (guide != null) {
                     OutlinedButton(onClick = drill, modifier = Modifier.weight(1f).height(52.dp),
-                        shape = RoundedCornerShape(14.dp)) { Text("Treinar fórmula", maxLines = 1) }
+                        shape = RoundedCornerShape(14.dp)) {
+                        Text(if (guide.language) "Treinar estrutura" else "Treinar fórmula", maxLines = 1)
+                    }
                 }
                 PrimaryButton("Praticar e testar", begin, Modifier.weight(1f))
             }
