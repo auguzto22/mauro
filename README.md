@@ -42,8 +42,11 @@ Na tela Aprender, o seletor no topo troca entre **Física quântica** e **Inglê
 | Inglês 1 · A base da frase | Pronomes pessoais, verbo to be (am, is, are), to be na negativa e na pergunta, possessivos, artigos a/an/the, there is/there are |
 | Inglês 2 · Ações no presente | Presente simples (I work, she works), do/does, presente contínuo, pronomes objeto, can/can't |
 | Inglês 3 · Perguntas, passado e futuro | What, where, when, who, why, how; in/on/at; was/were; passado simples e did; will e going to |
+| Inglês 4 · Palavras de ligação (avançado) | 57 conectivos e palavras de fala natural (just, already, yet, still, but, so, because, although, however, also, too, either, actually, anyway, kind of e outras) e o apóstrofo: I'm, don't, it's/its, your/you're, Pedro's, the girls' |
 
 Cada lição mostra a estrutura da frase como uma "fórmula" (por exemplo, Sujeito + am/is/are + complemento), monta a frase etapa por etapa e traz situações reais: entrevista de emprego, hotel, restaurante, mensagens e reuniões. A seção **Ouça e repita** lê frases em inglês com o motor de voz do Android, em velocidade normal ou devagar, e mostra a pronúncia aproximada escrita em português. **Treinar estrutura** gera questões de lacuna com sujeitos e verbos variados. Cada alternativa errada explica o engano, como "depois de does o verbo fica sem -s". Depois de responder, dá para ouvir a frase certa.
+
+No módulo 4, cada lição traz um glossário tocável com significado, exemplo, tradução, pronúncia aproximada e áudio da palavra e da frase. As questões mostram a tradução da frase, então só a palavra com aquele sentido completa a lacuna.
 
 ## Fórmulas explicadas
 

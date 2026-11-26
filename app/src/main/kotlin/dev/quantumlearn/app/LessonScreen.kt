@@ -103,7 +103,8 @@ internal fun LessonScreen(
             if (guide != null) {
                 Reveal(3) { FormulaAnatomy(guide) }
                 Reveal(4) { FormulaWalkthrough(guide) }
-                if (guide.language) SpeakPractice(guide.phrases)
+                if (guide.words.isNotEmpty()) WordList(guide.words)
+                else if (guide.language) SpeakPractice(guide.phrases)
             }
             Reveal(5) {
                 Panel(Modifier.animateContentSize()) {

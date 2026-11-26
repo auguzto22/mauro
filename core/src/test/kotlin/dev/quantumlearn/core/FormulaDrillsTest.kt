@@ -85,4 +85,20 @@ class FormulaDrillsTest {
         assertEquals(null, FormulaDrills.restore("inexistente-formula-conta-1"))
         assertEquals(null, FormulaDrills.restore("waves-formula-outro-1"))
     }
+
+    @Test
+    fun wordLessonsCoverAtLeastFiftyConnectives() {
+        val words = FormulaGuides.all.flatMap { it.words }
+        val connectives = words.filterNot { "'" in it.word }
+        assertTrue("Conectivos: ${connectives.size}", connectives.size >= 50)
+        assertEquals(words.size, words.map { it.word.lowercase() }.distinct().size)
+        for (word in words) {
+            for ((trap, why) in word.traps) {
+                assertTrue("${word.word}: armadilha $trap sem explicação", why.isNotBlank() || glossary.containsKey(trap.lowercase()))
+                assertTrue("${word.word}: armadilha igual à resposta", trap.lowercase() != word.word.lowercase())
+            }
+            val pick = wordPick(word)
+            assertTrue(word.word, "___" in pick.sentence && pick.solved == word.example)
+        }
+    }
 }

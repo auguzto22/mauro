@@ -2,6 +2,13 @@ package dev.quantumlearn.app
 
 import android.content.Context
 import android.speech.tts.TextToSpeech
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -9,6 +16,7 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -26,6 +34,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,6 +49,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import dev.quantumlearn.core.Phrase
+import dev.quantumlearn.core.Word
 import java.util.Locale
 
 /** Leitura em voz alta com o motor de voz do aparelho, em inglês americano. Funciona offline se a voz estiver instalada. */
@@ -167,6 +177,55 @@ internal fun ListenRow(text: String, speaker: Speaker) {
                 Text(text, style = MaterialTheme.typography.titleMedium)
             }
             TextButton(onClick = { speaker.say(text, slow = true) }, enabled = speaker.ready) { Text("Devagar") }
+        }
+    }
+}
+
+/** Glossário da lição: cada palavra abre para mostrar exemplo, tradução, pronúncia e áudio. */
+@Composable
+internal fun WordList(words: List<Word>) {
+    val speaker = rememberSpeaker()
+    val colors = MaterialTheme.colorScheme
+    var open by rememberSaveable { mutableStateOf(-1) }
+    Panel(Modifier.animateContentSize()) {
+        SectionTitle("As ${words.size} palavras desta lição")
+        Body("Toque numa palavra para ver o exemplo, a tradução e ouvir como se fala.")
+        words.forEachIndexed { index, word ->
+            val expanded = open == index
+            val border by animateColorAsState(if (expanded) colors.primary else colors.outlineVariant, label = "Borda da palavra")
+            Surface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(14.dp), color = colors.surfaceVariant,
+                border = BorderStroke(1.dp, border)) {
+                Column(Modifier.clickable(onClickLabel = if (expanded) "Fechar ${word.word}" else "Abrir ${word.word}") {
+                    open = if (expanded) -1 else index
+                }.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        Text(word.word, style = MaterialTheme.typography.titleMedium, color = colors.primary)
+                        Text(word.meaning, Modifier.weight(1f), style = MaterialTheme.typography.bodySmall,
+                            color = colors.onSurfaceVariant)
+                    }
+                    AnimatedVisibility(expanded, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
+                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                            Text("Pronúncia aproximada: ${word.sounds}", style = MaterialTheme.typography.bodySmall,
+                                fontStyle = FontStyle.Italic, color = colors.primary)
+                            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                ListenButton(word.example, speaker)
+                                Column(Modifier.weight(1f)) {
+                                    Text(word.example, style = MaterialTheme.typography.bodyLarge)
+                                    Text(word.translation, style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
+                                }
+                            }
+                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                                TextButton(onClick = { speaker.say(word.word, slow = true) }, enabled = speaker.ready) {
+                                    Text("Ouvir só a palavra")
+                                }
+                                TextButton(onClick = { speaker.say(word.example, slow = true) }, enabled = speaker.ready) {
+                                    Text("Frase devagar")
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }

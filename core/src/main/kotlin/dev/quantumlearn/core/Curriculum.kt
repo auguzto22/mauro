@@ -60,6 +60,11 @@ object Curriculum {
             StudyModule("Inglês 3 · Perguntas, passado e futuro", listOf(
                 StudyUnit("Fazer perguntas", listOf(englishWh(), englishTime())),
                 StudyUnit("Ontem e amanhã", listOf(englishWasWere(), englishPast(), englishFuture()))
+            ), Track.English),
+            StudyModule("Inglês 4 · Palavras de ligação (avançado)", listOf(
+                StudyUnit("Tempo e sequência", listOf(englishJust(), englishSequence())),
+                StudyUnit("Ligar ideias", listOf(englishLinkers(), englishAddition())),
+                StudyUnit("Falar como nativo", listOf(englishFillers(), englishApostrophe()))
             ), Track.English)
         ).also(QuestionBank::validate)
     }

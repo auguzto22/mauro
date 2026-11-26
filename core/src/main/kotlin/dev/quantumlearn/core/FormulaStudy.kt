@@ -16,6 +16,15 @@ enum class Scene(val label: String) {
     Games("Jogos e séries")
 }
 
+/**
+ * Uma palavra de ligação do inglês com significado, exemplo, tradução e pronúncia aproximada.
+ * As armadilhas são palavras que não servem no exemplo. Uma explicação vazia é preenchida pelo glossário.
+ */
+data class Word(
+    val word: String, val meaning: String, val example: String, val translation: String, val sounds: String,
+    val traps: List<Pair<String, String>>
+)
+
 /** Uma frase em inglês para ouvir e repetir, com tradução e pronúncia aproximada em português. */
 data class Phrase(val english: String, val portuguese: String, val sounds: String)
 
@@ -68,10 +77,11 @@ data class FormulaGuide(
     val isolation: Isolation?,
     val plug: ((Int, Int) -> Plug)?,
     val pick: ((Int, Int) -> Pick)? = null,
-    val phrases: List<Phrase> = emptyList()
+    val phrases: List<Phrase> = emptyList(),
+    val words: List<Word> = emptyList()
 ) {
     /** Guias de inglês falam de estrutura de frase, não de fórmula numérica. */
-    val language get() = phrases.isNotEmpty()
+    val language get() = phrases.isNotEmpty() || words.isNotEmpty()
 
     val formula get() = Formula(latex, symbols.joinToString(" · ") { symbol ->
         symbol.symbol + ": " + symbol.meaning + if (symbol.unit.isBlank()) "" else " (${symbol.unit})"

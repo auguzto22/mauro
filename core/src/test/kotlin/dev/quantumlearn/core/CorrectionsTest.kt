@@ -10,7 +10,7 @@ import org.junit.Test
 class CorrectionsTest {
     @Test fun everyAuthoredQuestionHasAnAcceptedAnswerAndEachDistractorHasSpecificFeedback() {
         QuestionBank.validate(Curriculum.modules)
-        assertEquals(listOf(6, 6, 8, 8, 6, 9, 9, 6, 5, 5), Curriculum.modules.map { it.lessons.size })
+        assertEquals(listOf(6, 6, 8, 8, 6, 9, 9, 6, 5, 5, 6), Curriculum.modules.map { it.lessons.size })
         for (question in Curriculum.questions) {
             when (val expected = question.expected) {
                 is AnswerSpec.Choice -> {
