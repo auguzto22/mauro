@@ -13,6 +13,7 @@ import dev.quantumlearn.core.Corrections
 import dev.quantumlearn.core.Curriculum
 import dev.quantumlearn.core.Difficulty
 import dev.quantumlearn.core.Feedback
+import dev.quantumlearn.core.FormulaDrills
 import dev.quantumlearn.core.Learning
 import dev.quantumlearn.core.Lesson
 import dev.quantumlearn.core.OfflineTutor
@@ -134,6 +135,13 @@ class StudyViewModel(application: Application) : AndroidViewModel(application) {
             shownAt = openedLessonAt.takeIf { it > 0 } ?: SystemClock.elapsedRealtime()))
     }
 
+    /** Treino focado só na fórmula da lição: símbolos, estrutura, contas e casos reais. */
+    fun startFormulaDrill(lesson: Lesson) {
+        val questions = FormulaDrills.session(lesson.id)
+        if (questions.isEmpty()) return startLesson(lesson)
+        page.value = Page.Quiz(Session(questions, tab.value, lesson))
+    }
+
     fun updateSettings(settings: ChallengeSettings) {
         challengeNotice.value = null
         challengeSettings.value = settings
@@ -166,7 +174,8 @@ class StudyViewModel(application: Application) : AndroidViewModel(application) {
 
     private fun variants(lessonId: String?, random: Random, perLesson: Int): List<Question> =
         Curriculum.lessons.asSequence().filter { lessonId == null || it.id == lessonId }.flatMap { lesson ->
-            List(perLesson) { Practice.generate(lesson.id, random.nextInt(Int.MAX_VALUE)) }.filterNotNull()
+            List(perLesson) { Practice.generate(lesson.id, random.nextInt(Int.MAX_VALUE)) }.filterNotNull() +
+                listOfNotNull(FormulaDrills.calculation(lesson.id, random))
         }.toList()
 
     fun submit(answer: Answer) {
@@ -220,7 +229,11 @@ class StudyViewModel(application: Application) : AndroidViewModel(application) {
         if (session.question.id in session.followUps) return session
         val queued = session.questions.map(Question::prompt).toSet()
         val alreadyShown = session.questions.take(session.index + 1).map(Question::id).toSet() + session.followUps
-        val candidate = variants(session.question.lessonId, Random.Default, 10)
+        val drill = if (FormulaDrills.isDrill(session.question)) {
+            generateSequence { FormulaDrills.calculation(session.question.lessonId) }.take(12)
+                .firstOrNull { it.prompt !in queued }
+        } else null
+        val candidate = drill ?: variants(session.question.lessonId, Random.Default, 10)
             .firstOrNull { it.prompt !in queued }
             ?: QuestionSelection.followUp(session.question, Curriculum.questions, alreadyShown)
             ?: return session
@@ -303,7 +316,8 @@ class StudyViewModel(application: Application) : AndroidViewModel(application) {
         }
         viewModelScope.launch {
             val last = attempts.value.lastOrNull { it.lessonId == lesson.id && !it.correct }
-            val question = last?.let { authoredQuestions[it.questionId] ?: Practice.restore(it.questionId) }
+            val question = last?.let { authoredQuestions[it.questionId] ?: Practice.restore(it.questionId)
+                ?: FormulaDrills.restore(it.questionId) }
             val answer = last?.answer
             val feedback = if (question != null && answer != null) Corrections.grade(question, answer) else null
             val reply = tutor.explain(TutorRequest(lesson, action, feedback))

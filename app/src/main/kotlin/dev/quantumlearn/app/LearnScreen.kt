@@ -1,5 +1,11 @@
 package dev.quantumlearn.app
 
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -25,11 +31,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import dev.quantumlearn.core.Curriculum
@@ -83,8 +91,10 @@ internal fun LearnScreen(progress: Progress, dailyGoal: Int, moduleIndex: Int, s
                 Text(unit.title, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 4.dp))
             }
             itemsIndexed(unit.lessons, key = { _, lesson -> lesson.id }) { index, lesson ->
-                LessonRow(lesson, progress.mastery[lesson.id], lesson.id in progress.completions,
-                    lesson.id == next.id, index != unit.lessons.lastIndex) { open(lesson) }
+                Box(Modifier.animateItem()) {
+                    LessonRow(lesson, progress.mastery[lesson.id], lesson.id in progress.completions,
+                        lesson.id == next.id, index != unit.lessons.lastIndex) { open(lesson) }
+                }
             }
         }
     }
@@ -110,7 +120,11 @@ private fun Hero(lesson: Lesson, module: Int, hasProgress: Boolean, onClick: () 
         .background(Brush.linearGradient(listOf(Color(0xFF272043), Color(0xFF482678), Color(0xFF24173C)))),
         contentAlignment = Alignment.CenterStart) {
         val art = maxWidth >= 295.dp
-        if (art) Mascot(Modifier.align(Alignment.CenterEnd).size(if (maxWidth > 350.dp) 150.dp else 121.dp))
+        val float = rememberInfiniteTransition(label = "Mascote")
+        val bob by float.animateFloat(-4f, 4f, infiniteRepeatable(tween(1800, easing = FastOutSlowInEasing), RepeatMode.Reverse),
+            label = "Flutuar")
+        if (art) Mascot(Modifier.align(Alignment.CenterEnd).size(if (maxWidth > 350.dp) 150.dp else 121.dp)
+            .graphicsLayer { translationY = bob.dp.toPx() })
         Column(Modifier.padding(start = 18.dp, end = if (art) 119.dp else 18.dp, top = 17.dp, bottom = 17.dp),
             verticalArrangement = Arrangement.spacedBy(7.dp)) {
             Eyebrow("PRÓXIMA LIÇÃO · MÓDULO $module", PaleViolet)

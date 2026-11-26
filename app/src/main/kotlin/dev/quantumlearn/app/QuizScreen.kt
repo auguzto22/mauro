@@ -1,6 +1,11 @@
 package dev.quantumlearn.app
 
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
@@ -43,6 +48,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
@@ -54,6 +60,7 @@ import dev.quantumlearn.core.Answer
 import dev.quantumlearn.core.AnswerSpec
 import dev.quantumlearn.core.ChoiceType
 import dev.quantumlearn.core.Feedback
+import dev.quantumlearn.core.FormulaDrills
 import dev.quantumlearn.core.Outcome
 import dev.quantumlearn.core.Question
 import dev.quantumlearn.core.TutorAction
@@ -97,9 +104,13 @@ private fun QuestionScreen(
     LaunchedEffect(feedback) {
         if (showFeedback) list.animateScrollToItem(2)
     }
+    val drill = FormulaDrills.isDrill(question)
+    val promptShown = remember { MutableTransitionState(false).apply { targetState = true } }
+    val answersShown = remember { MutableTransitionState(false).apply { targetState = true } }
+    val feedbackShown = remember(feedback) { MutableTransitionState(false).apply { targetState = true } }
 
     Column(Modifier.fillMaxSize().navigationBarsPadding().imePadding()) {
-        DetailHeader(session.settings?.mode?.label ?: "Prática", back) {
+        DetailHeader(session.settings?.mode?.label ?: if (drill) "Treino da fórmula" else "Prática", back) {
             if (session.isInfinite) TextButton(onClick = finish, enabled = !session.busy) { Text("Encerrar") }
             else Body("${session.index + 1} de ${session.questions.size}")
         }
@@ -109,68 +120,74 @@ private fun QuestionScreen(
         LazyColumn(Modifier.weight(1f), state = list, contentPadding = PaddingValues(18.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)) {
             item("prompt") {
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Eyebrow(if (wasFollowUp) "VERIFICAÇÃO · ${question.concept.uppercase()}" else question.concept.uppercase())
-                    Text(question.prompt, style = MaterialTheme.typography.headlineMedium)
-                    session.notice?.let { Text(it, color = colors.onSurfaceVariant, style = MaterialTheme.typography.bodySmall) }
+                Reveal(0, promptShown) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        if (drill) FormulaBadge(question.formula.latex)
+                        Eyebrow(if (wasFollowUp) "VERIFICAÇÃO · ${question.concept.uppercase()}" else question.concept.uppercase())
+                        Text(question.prompt, style = if (drill) MaterialTheme.typography.headlineSmall
+                            else MaterialTheme.typography.headlineMedium)
+                        session.notice?.let { Text(it, color = colors.onSurfaceVariant, style = MaterialTheme.typography.bodySmall) }
+                    }
                 }
             }
             item("answer") {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    when (val spec = question.expected) {
-                        is AnswerSpec.Choice -> {
-                            Column(Modifier.selectableGroup(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                spec.options.forEachIndexed { index, option ->
-                                    AnswerChoice(option.label, selected == index, !graded && !session.busy,
-                                        if (graded && selected == index) feedback?.outcome else null,
-                                        if (spec.type == ChoiceType.Graph) index else null) { selected = index }
-                                }
-                            }
-                        }
-                        is AnswerSpec.Sequence -> {
-                            spec.steps.forEachIndexed { index, step ->
-                                val position = ordered.indexOf(index)
-                                val label = if (position >= 0) "${position + 1}. $step" else step
-                                AnswerChoice(label, position >= 0, !graded && !session.busy && position < 0, null) {
-                                    ordered = ordered + index
-                                }
-                            }
-                            if (ordered.isNotEmpty() && !graded) {
-                                TextButton(onClick = { ordered = emptyList() }, enabled = !session.busy) {
-                                    Text("Reiniciar ordem")
-                                }
-                            }
-                        }
-                        is AnswerSpec.Matching -> {
-                            val options = (spec.pairs.indices.reversed().toList())
-                            spec.pairs.forEachIndexed { index, pair ->
-                                Picker(pair.term, matches.getOrNull(index) ?: -1, options,
-                                    { chosen -> spec.pairs.getOrNull(chosen)?.definition ?: "Selecione a relação" },
-                                    enabled = !graded && !session.busy) { chosen ->
-                                    matches = List(spec.pairs.size) { slot ->
-                                        if (slot == index) chosen else matches.getOrNull(slot) ?: -1
+                Reveal(2, answersShown) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        when (val spec = question.expected) {
+                            is AnswerSpec.Choice -> {
+                                Column(Modifier.selectableGroup(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    spec.options.forEachIndexed { index, option ->
+                                        AnswerChoice(option.label, selected == index, !graded && !session.busy,
+                                            if (graded && selected == index) feedback?.outcome else null,
+                                            if (spec.type == ChoiceType.Graph) index else null) { selected = index }
                                     }
                                 }
                             }
-                        }
-                        is AnswerSpec.Numeric, is AnswerSpec.Written -> {
-                            OutlinedTextField(entered, { entered = it.take(160) }, Modifier.fillMaxWidth(),
-                                enabled = !graded && !session.busy,
-                                label = { Text(if (spec is AnswerSpec.Numeric) "Valor ou expressão" else "Sua explicação") },
-                                supportingText = {
-                                    if (spec is AnswerSpec.Numeric) Body(
-                                        if (spec.unit == null) "Exemplos de entrada: 3/4, sqrt(9), 2,5e-3."
-                                        else "Separe o valor da unidade por um espaço. Exemplo: 3 ${spec.unit}."
-                                    )
-                                },
-                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                                singleLine = spec is AnswerSpec.Numeric, minLines = if (spec is AnswerSpec.Written) 3 else 1)
+                            is AnswerSpec.Sequence -> {
+                                spec.steps.forEachIndexed { index, step ->
+                                    val position = ordered.indexOf(index)
+                                    val label = if (position >= 0) "${position + 1}. $step" else step
+                                    AnswerChoice(label, position >= 0, !graded && !session.busy && position < 0, null) {
+                                        ordered = ordered + index
+                                    }
+                                }
+                                if (ordered.isNotEmpty() && !graded) {
+                                    TextButton(onClick = { ordered = emptyList() }, enabled = !session.busy) {
+                                        Text("Reiniciar ordem")
+                                    }
+                                }
+                            }
+                            is AnswerSpec.Matching -> {
+                                val options = (spec.pairs.indices.reversed().toList())
+                                spec.pairs.forEachIndexed { index, pair ->
+                                    Picker(pair.term, matches.getOrNull(index) ?: -1, options,
+                                        { chosen -> spec.pairs.getOrNull(chosen)?.definition ?: "Selecione a relação" },
+                                        enabled = !graded && !session.busy) { chosen ->
+                                        matches = List(spec.pairs.size) { slot ->
+                                            if (slot == index) chosen else matches.getOrNull(slot) ?: -1
+                                        }
+                                    }
+                                }
+                            }
+                            is AnswerSpec.Numeric, is AnswerSpec.Written -> {
+                                OutlinedTextField(entered, { entered = it.take(160) }, Modifier.fillMaxWidth(),
+                                    enabled = !graded && !session.busy,
+                                    label = { Text(if (spec is AnswerSpec.Numeric) "Valor ou expressão" else "Sua explicação") },
+                                    supportingText = {
+                                        if (spec is AnswerSpec.Numeric) Body(
+                                            if (spec.unit == null) "Exemplos de entrada: 3/4, sqrt(9), 2,5e-3."
+                                            else "Separe o valor da unidade por um espaço. Exemplo: 3 ${spec.unit}."
+                                        )
+                                    },
+                                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                                    singleLine = spec is AnswerSpec.Numeric, minLines = if (spec is AnswerSpec.Written) 3 else 1)
+                            }
                         }
                     }
                 }
             }
             if (feedback != null) {
-                item("feedback") { FeedbackCard(question, feedback, wasFollowUp) }
+                item("feedback") { Reveal(0, feedbackShown) { FeedbackCard(question, feedback, wasFollowUp) } }
             }
         }
         Surface(color = colors.background) {
@@ -209,17 +226,33 @@ private fun AnswerChoice(
 ) {
     val colors = MaterialTheme.colorScheme
     val shape = RoundedCornerShape(14.dp)
-    val background = when (result) {
+    val background by animateColorAsState(when (result) {
         Outcome.Correct -> colors.tertiaryContainer
         Outcome.Incorrect -> colors.errorContainer
         else -> if (selected) colors.primaryContainer else colors.surface
-    }
-    val tint = when (result) {
+    }, tween(260), label = "Fundo da alternativa")
+    val tint by animateColorAsState(when (result) {
         Outcome.Correct -> colors.onTertiaryContainer
         Outcome.Incorrect -> colors.onErrorContainer
         else -> if (selected) colors.onPrimaryContainer else colors.onSurface
+    }, tween(260), label = "Cor da alternativa")
+    val pop by animateFloatAsState(if (selected && result == null) 1.02f else 1f,
+        spring(Spring.DampingRatioMediumBouncy), label = "Seleção")
+    val shake = remember { Animatable(0f) }
+    LaunchedEffect(result) {
+        when (result) {
+            Outcome.Incorrect -> for (offset in listOf(14f, -12f, 9f, -6f, 3f, 0f)) shake.animateTo(offset, tween(55))
+            Outcome.Correct -> {
+                shake.animateTo(-6f, tween(90))
+                shake.animateTo(0f, spring(Spring.DampingRatioMediumBouncy))
+            }
+            else -> Unit
+        }
     }
-    Surface(shape = shape, color = background, contentColor = tint,
+    Surface(Modifier.graphicsLayer {
+        scaleX = pop; scaleY = pop
+        if (result == Outcome.Correct) { translationY = shake.value } else { translationX = shake.value }
+    }, shape = shape, color = background, contentColor = tint,
         border = BorderStroke(1.dp, if (selected) tint.copy(alpha = .5f) else colors.outlineVariant)) {
         Row(Modifier.fillMaxWidth().selectable(selected, enabled, role = Role.RadioButton, onClick = select)
             .padding(14.dp), horizontalArrangement = Arrangement.spacedBy(11.dp),
@@ -270,11 +303,18 @@ private fun FeedbackCard(question: Question, feedback: Feedback, remediation: Bo
     Column(Modifier.semantics { liveRegion = LiveRegionMode.Polite }, verticalArrangement = Arrangement.spacedBy(9.dp)) {
         Surface(Modifier.fillMaxWidth(), shape = RoundedCornerShape(16.dp), color = container, contentColor = tint) {
             Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(when (feedback.outcome) {
-                    Outcome.Correct -> if (remediation) "Verificação correta" else "Resposta correta"
-                    Outcome.Incorrect -> "Entenda o seu resultado"
-                    Outcome.Clarify -> "Precisamos de um detalhe"
-                }, style = MaterialTheme.typography.titleMedium)
+                val badge = remember { Animatable(.4f) }
+                LaunchedEffect(Unit) { badge.animateTo(1f, spring(Spring.DampingRatioHighBouncy, Spring.StiffnessLow)) }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    if (feedback.outcome == Outcome.Correct) {
+                        Mark(Glyph.Check, tint, Modifier.size(22.dp).graphicsLayer { scaleX = badge.value; scaleY = badge.value })
+                    }
+                    Text(when (feedback.outcome) {
+                        Outcome.Correct -> if (remediation) "Verificação correta" else "Resposta correta"
+                        Outcome.Incorrect -> "Entenda o seu resultado"
+                        Outcome.Clarify -> "Precisamos de um detalhe"
+                    }, style = MaterialTheme.typography.titleMedium)
+                }
                 Text(feedback.explanation, style = MaterialTheme.typography.bodyMedium)
                 if (feedback.outcome == Outcome.Incorrect) {
                     Text("Sua resposta · ${feedback.answer}", style = MaterialTheme.typography.labelLarge)
@@ -287,7 +327,17 @@ private fun FeedbackCard(question: Question, feedback: Feedback, remediation: Bo
         if (feedback.steps.isNotEmpty()) {
             Panel {
                 SectionTitle("Resolução passo a passo")
-                feedback.steps.forEachIndexed { index, step -> Body("${index + 1}. $step") }
+                feedback.steps.forEachIndexed { index, step ->
+                    Reveal(index + 1) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.Top) {
+                            Box(Modifier.size(22.dp).background(colors.primary, RoundedCornerShape(11.dp)),
+                                contentAlignment = Alignment.Center) {
+                                Text("${index + 1}", color = colors.onPrimary, style = MaterialTheme.typography.labelSmall)
+                            }
+                            Body(step)
+                        }
+                    }
+                }
                 Equation(question.formula)
                 SectionTitle("Outro exemplo")
                 Body(feedback.example)

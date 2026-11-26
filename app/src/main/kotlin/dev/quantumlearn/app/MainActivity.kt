@@ -94,6 +94,7 @@ private fun App(model: StudyViewModel, dailyGoal: Int, mode: ThemeMode) {
                     }
                     is Page.LessonDetail -> key(current.lesson.id) {
                         LessonScreen(current.lesson, model::back, { model.startLesson(current.lesson) },
+                            { model.startFormulaDrill(current.lesson) },
                             { action -> model.tutorFor(current.lesson.id, action) })
                     }
                     is Page.Quiz -> QuizScreen(current.session, model)

@@ -33,6 +33,17 @@ No Android Studio, abra a pasta do projeto, escolha um emulador ou dispositivo e
 - `:data` usa Room com KSP para registrar respostas, conclusões e preferências. O esquema é versionado em `data/schemas`. UUIDs e transações tornam reenvios idempotentes e mantêm recompensas por pergunta consistentes no aparelho.
 - `:app` usa Compose, Material 3, `ViewModel`, corrotinas e `Flow`. Desenhos nativos em Canvas e um renderizador do subconjunto de LaTeX usado pelo currículo mantêm as telas offline sem WebView. O tema pode ser claro, escuro ou seguir o aparelho.
 
+## Fórmulas explicadas
+
+Cada uma das 52 lições tem um guia da fórmula em `core/.../FormulaGuides*.kt`:
+
+- **Anatomia da fórmula**: a fórmula em destaque com cada símbolo tocável. Tocar mostra o significado e a unidade.
+- **Como a fórmula funciona**: a fórmula construída etapa por etapa, com transições animadas, como no quadro.
+- **Onde isso acontece de verdade**: exemplos reais (chuveiro elétrico, Wi-Fi, ressonância magnética, pen drive, câmera térmica, relógio atômico e outros) com a conta aberta ao tocar.
+- **Treinar fórmula**: uma sessão só da fórmula, em ordem crescente. Primeiro o papel de cada símbolo, depois a estrutura (isolar uma grandeza ou prever um efeito), duas contas diretas geradas com valores variados e, por fim, problemas dos casos reais. Cada conta tem uma armadilha comum diagnosticada. Um erro traz outra conta da mesma fórmula.
+
+`FormulaDrillsTest` confere que toda lição tem guia e que todas as questões geradas têm solução válida.
+
 ## Aprendizado e correção
 
 - Cada opção incorreta tem diagnóstico próprio. O retorno mostra a escolha, o conceito que pode ter sido confundido, o resultado esperado, a resolução e um caso distinto. Quando há uma questão correspondente disponível, o erro dispara uma verificação do mesmo assunto.
